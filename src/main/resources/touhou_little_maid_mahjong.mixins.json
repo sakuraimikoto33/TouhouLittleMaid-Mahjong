@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8.5",
+  "package": "io.github.mahjongmaid.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "touhou_little_maid_mahjong.refmap.json",
+  "mixins": ["MahjongTableBlockEntityMixin"],
+  "client": ["MahjongTableRendererMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

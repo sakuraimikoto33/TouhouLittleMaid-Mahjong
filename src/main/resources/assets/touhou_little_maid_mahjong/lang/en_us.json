@@ -1,0 +1,4 @@
+{
+  "task.touhou_little_maid_mahjong.mahjong": "Mahjong",
+  "task.touhou_little_maid_mahjong.mahjong.desc": "At the start of a match, nearby maids (within 8 blocks by default) join in place of bots. Up to three maids can join, depending on how many seats players occupy. Riichi Mahjong's bots handle discards and calls. Favorability changes after the match ends."
+}

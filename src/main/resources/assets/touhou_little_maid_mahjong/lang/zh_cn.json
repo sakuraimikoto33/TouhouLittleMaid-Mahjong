@@ -1,0 +1,4 @@
+{
+  "task.touhou_little_maid_mahjong.mahjong": "麻将",
+  "task.touhou_little_maid_mahjong.mahjong.desc": "对局开始时，麻将桌附近（默认8格以内）的女仆会替代机器人入座。根据玩家占用的座位数，最多可有3位女仆参加。出牌和鸣牌由Riichi Mahjong的机器人负责，对局结束后会产生好感度变化。"
+}

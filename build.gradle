@@ -1,0 +1,130 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '6.0.54'
+    id 'org.spongepowered.mixin' version '0.7.38'
+}
+
+group = mod_group_id
+version = mod_version
+
+base {
+    archivesName = "${mod_id}-${minecraft_version}-forge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+// Loaded only by the automated game-test run, excluded from the distributable jar.
+sourceSets {
+    gameTest {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+configurations {
+    gameTestImplementation.extendsFrom implementation
+    gameTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'info'
+            property 'forge.enabledGameTestNamespaces', mod_id
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {}
+        server {
+            args '--nogui'
+        }
+        gameTestServer {
+            workingDirectory project.file('run-gametest')
+            mods {
+                "${mod_id}" { source sourceSets.gameTest }
+            }
+        }
+    }
+}
+
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.mixins.json"
+}
+
+repositories {
+    maven {
+        name = 'Modrinth'
+        url = 'https://api.modrinth.com/maven'
+        content { includeGroup 'maven.modrinth' }
+    }
+    maven {
+        name = 'Sponge'
+        url = 'https://repo.spongepowered.org/repository/maven-public/'
+        content { includeGroup 'org.spongepowered' }
+    }
+    mavenCentral()
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation fg.deobf("maven.modrinth:aUlSzMQ4:${riichi_mahjong_version}")
+    implementation fg.deobf("maven.modrinth:R0bDWFAW:${touhou_little_maid_version}")
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    def properties = [
+        mod_id: mod_id,
+        mod_name: mod_name,
+        mod_version: mod_version,
+        mod_license: mod_license,
+        minecraft_version: minecraft_version,
+        forge_version_range: forge_version_range,
+        touhou_little_maid_version_range: touhou_little_maid_version_range,
+        riichi_mahjong_version_range: riichi_mahjong_version_range
+    ]
+    inputs.properties properties
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand properties
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest.attributes([
+        'Specification-Title': mod_id,
+        'Specification-Version': mod_version,
+        'Implementation-Title': mod_name,
+        'Implementation-Version': mod_version,
+        'MixinConfigs': "${mod_id}.mixins.json"
+    ])
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+    finalizedBy 'reobfJar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+    }
+}

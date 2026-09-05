@@ -1,0 +1,4 @@
+{
+  "task.touhou_little_maid_mahjong.mahjong": "麻雀",
+  "task.touhou_little_maid_mahjong.mahjong.desc": "対局開始時、麻雀卓の近く（既定で8ブロック以内）にいるメイドがBotの席に参加します。プレイヤーの席を除き、最大3人まで参加できます。打牌や鳴きはRiichi MahjongのBotが担当し、対局終了後に好感度が変化します。"
+}
