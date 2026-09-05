@@ -5,6 +5,7 @@
         "AGENTS.md"
         ".agents"
         ".gitignore"
+        ".github"
     )
     MinecraftPaths = @(
         "src"
