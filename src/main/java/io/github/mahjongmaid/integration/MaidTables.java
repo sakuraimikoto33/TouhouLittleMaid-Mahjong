@@ -2,18 +2,18 @@ package io.github.mahjongmaid.integration;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.riichimahjongforge.mahjongtable.MahjongTableBlockEntity;
+import com.riichimahjong.mahjongtable.MahjongTableBlockEntity;
 import io.github.mahjongmaid.MahjongMaidMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraftforge.event.entity.living.LivingEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class MaidTables {
     public static final String MARKER = MahjongMaidMod.ID + ":seat";
-    public static final ResourceLocation TASK = new ResourceLocation(MahjongMaidMod.ID, "mahjong");
+    public static final ResourceLocation TASK = ResourceLocation.fromNamespaceAndPath(MahjongMaidMod.ID, "mahjong");
     public static final double SEARCH_RADIUS = 8.0;
     // Match the chess enjoyment/owner-win convention, with independent persisted cooldowns.
     static final Type PLAYED = new Type("MahjongMaidPlayed", 2, 24000);
@@ -58,7 +58,7 @@ public final class MaidTables {
     }
 
     /** Recovers a saved maid if its table was destroyed, moved, or unloaded first. */
-    public static void onMaidTick(LivingEvent.LivingTickEvent event) {
+    public static void onMaidTick(EntityTickEvent.Post event) {
         if (!(event.getEntity() instanceof EntityMaid maid)
                 || !(maid.level() instanceof ServerLevel level)
                 || !isPlaying(maid) || maid.tickCount < 40 || maid.tickCount % 20 != 0) return;

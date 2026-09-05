@@ -1,8 +1,8 @@
 package io.github.mahjongmaid.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.riichimahjongforge.mahjongtable.MahjongTableBlockEntity;
-import com.riichimahjongforge.mahjongtable.client.MahjongTableRenderer;
+import com.riichimahjong.mahjongtable.MahjongTableBlockEntity;
+import com.riichimahjong.mahjongtable.client.MahjongTableRenderer;
 import io.github.mahjongmaid.integration.MaidTableAccess;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
@@ -25,10 +25,10 @@ public abstract class MahjongTableRendererMixin {
     }
 
     @Redirect(
-            method = "render(Lcom/riichimahjongforge/mahjongtable/MahjongTableBlockEntity;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V",
+            method = "render(Lcom/riichimahjong/mahjongtable/MahjongTableBlockEntity;FLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;II)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lcom/riichimahjongforge/mahjongtable/client/MahjongTableRenderer;buildNameLine(Lcom/riichimahjongforge/mahjongtable/MahjongTableBlockEntity$SeatInfo;Lnet/minecraft/world/level/Level;)Lnet/minecraft/network/chat/Component;"))
+                    target = "Lcom/riichimahjong/mahjongtable/client/MahjongTableRenderer;buildNameLine(Lcom/riichimahjong/mahjongtable/MahjongTableBlockEntity$SeatInfo;Lnet/minecraft/world/level/Level;)Lnet/minecraft/network/chat/Component;"))
     private Component mahjongmaid$seatLabel(
             MahjongTableBlockEntity.SeatInfo info, Level level,
             MahjongTableBlockEntity table, float partialTick, PoseStack poseStack,

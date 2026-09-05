@@ -6,13 +6,13 @@ import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
 import com.github.tartaricacid.touhoulittlemaid.util.SoundUtil;
 import com.mojang.datafixers.util.Pair;
 import io.github.mahjongmaid.integration.MaidTables;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +20,9 @@ import java.util.List;
 /** Waits near a table until the table assigns this maid to a bot seat. */
 public final class MahjongTask implements IMaidTask {
     public static final ResourceLocation UID =
-            new ResourceLocation("touhou_little_maid_mahjong", "mahjong");
+            ResourceLocation.fromNamespaceAndPath("touhou_little_maid_mahjong", "mahjong");
     private static final ResourceLocation TABLE_ITEM =
-            new ResourceLocation("riichi_mahjong_forge", "mahjong_table_new");
+            ResourceLocation.fromNamespaceAndPath("riichi_mahjong", "mahjong_table_new");
 
     @Override
     public ResourceLocation getUid() {
@@ -31,7 +31,7 @@ public final class MahjongTask implements IMaidTask {
 
     @Override
     public ItemStack getIcon() {
-        Item table = ForgeRegistries.ITEMS.getValue(TABLE_ITEM);
+        Item table = BuiltInRegistries.ITEM.get(TABLE_ITEM);
         return new ItemStack(table == null || table == Items.AIR ? Items.BAMBOO : table);
     }
 

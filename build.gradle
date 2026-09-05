@@ -1,22 +1,23 @@
 plugins {
     id 'java'
     id 'idea'
-    id 'net.minecraftforge.gradle' version '6.0.54'
-    id 'org.spongepowered.mixin' version '0.7.38'
+    id 'net.neoforged.moddev' version '2.0.95'
 }
 
 group = mod_group_id
 version = mod_version
 
 base {
-    archivesName = "${mod_id}-${minecraft_version}-forge"
+    archivesName = "${mod_id}-${minecraft_version}-neoforge"
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 // Loaded only by the automated game-test run, excluded from the distributable jar.
 sourceSets {
     gameTest {
+        java.setSrcDirs(['src/gametest/java'])
+        resources.setSrcDirs(['src/gametest/resources'])
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
@@ -26,40 +27,41 @@ configurations {
     gameTestRuntimeOnly.extendsFrom runtimeOnly
 }
 
-minecraft {
-    mappings channel: 'official', version: minecraft_version
-    copyIdeResources = true
+neoForge {
+    version = neo_version
+    addModdingDependenciesTo(sourceSets.gameTest)
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+        // A separate development group includes tests only in the GameTest run.
+        "${mod_id}_tests" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.gameTest
+        }
+    }
 
     runs {
         configureEach {
-            workingDirectory project.file('run')
-            property 'forge.logging.console.level', 'info'
-            property 'forge.enabledGameTestNamespaces', mod_id
-            property 'mixin.env.remapRefMap', 'true'
-            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
-            mods {
-                "${mod_id}" {
-                    source sourceSets.main
-                }
-            }
+            gameDirectory = project.file('run/1.21.1')
+            systemProperty 'forge.logging.console.level', 'info'
+            loadedMods = [mods[mod_id]]
         }
 
-        client {}
+        client { client() }
         server {
-            args '--nogui'
+            server()
+            programArgument '--nogui'
         }
         gameTestServer {
-            workingDirectory project.file('run-gametest')
-            mods {
-                "${mod_id}" { source sourceSets.gameTest }
-            }
+            type = 'gameTestServer'
+            gameDirectory = project.file('run-gametest/1.21.1')
+            sourceSet = sourceSets.gameTest
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            loadedMods = [mods["${mod_id}_tests"]]
         }
     }
-}
-
-mixin {
-    add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
 }
 
 repositories {
@@ -69,18 +71,17 @@ repositories {
         content { includeGroup 'maven.modrinth' }
     }
     maven {
-        name = 'Sponge'
-        url = 'https://repo.spongepowered.org/repository/maven-public/'
-        content { includeGroup 'org.spongepowered' }
+        name = 'Architectury'
+        url = 'https://maven.architectury.dev'
+        content { includeGroup 'dev.architectury' }
     }
     mavenCentral()
 }
 
 dependencies {
-    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
-    implementation fg.deobf("maven.modrinth:aUlSzMQ4:${riichi_mahjong_version}")
-    implementation fg.deobf("maven.modrinth:R0bDWFAW:${touhou_little_maid_version}")
-    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    implementation "maven.modrinth:aUlSzMQ4:${riichi_mahjong_version}"
+    implementation "maven.modrinth:R0bDWFAW:${touhou_little_maid_version}"
+    implementation "dev.architectury:architectury-neoforge:${architectury_version}"
 
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -94,12 +95,12 @@ tasks.named('processResources', ProcessResources).configure {
         mod_version: mod_version,
         mod_license: mod_license,
         minecraft_version: minecraft_version,
-        forge_version_range: forge_version_range,
+        neo_version_range: neo_version_range,
         touhou_little_maid_version_range: touhou_little_maid_version_range,
         riichi_mahjong_version_range: riichi_mahjong_version_range
     ]
     inputs.properties properties
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+    filesMatching(['META-INF/neoforge.mods.toml', 'pack.mcmeta']) {
         expand properties
     }
 }
@@ -109,12 +110,10 @@ tasks.named('jar', Jar).configure {
         'Specification-Title': mod_id,
         'Specification-Version': mod_version,
         'Implementation-Title': mod_name,
-        'Implementation-Version': mod_version,
-        'MixinConfigs': "${mod_id}.mixins.json"
+        'Implementation-Version': mod_version
     ])
     preserveFileTimestamps = false
     reproducibleFileOrder = true
-    finalizedBy 'reobfJar'
 }
 
 tasks.withType(JavaCompile).configureEach {

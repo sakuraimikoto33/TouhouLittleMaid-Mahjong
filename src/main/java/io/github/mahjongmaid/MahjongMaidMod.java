@@ -1,8 +1,8 @@
 package io.github.mahjongmaid;
 
 import io.github.mahjongmaid.integration.MaidTables;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.fml.common.Mod;
 
 @Mod(MahjongMaidMod.ID)
 public final class MahjongMaidMod {
@@ -10,6 +10,6 @@ public final class MahjongMaidMod {
 
     public MahjongMaidMod() {
         MaidTables.initializeFavorability();
-        MinecraftForge.EVENT_BUS.addListener(MaidTables::onMaidTick);
+        NeoForge.EVENT_BUS.addListener(MaidTables::onMaidTick);
     }
 }

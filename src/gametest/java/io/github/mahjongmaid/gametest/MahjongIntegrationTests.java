@@ -4,9 +4,9 @@ import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskIdle;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.TaskManager;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
-import com.riichimahjongforge.RiichiMahjongForgeMod;
-import com.riichimahjongforge.mahjongtable.MahjongTableBlockEntity;
-import com.riichimahjongforge.mahjongtable.RuleSetPreset;
+import com.riichimahjong.registry.ModBlocks;
+import com.riichimahjong.mahjongtable.MahjongTableBlockEntity;
+import com.riichimahjong.mahjongtable.RuleSetPreset;
 import com.themahjong.driver.MatchPhase;
 import com.themahjong.driver.bots.StupidActiveBot;
 import io.github.mahjongmaid.integration.MaidTableAccess;
@@ -22,8 +22,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.gametest.GameTestHolder;
-import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.gametest.GameTestHolder;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,7 +103,7 @@ public final class MahjongIntegrationTests {
                         "Sanma maid seats must use the upstream bot implementation");
             }
             // The reported crash occurs in the real table's saveAdditional, including client updates.
-            assertSanmaTag(helper, fixture.table.getUpdateTag());
+            assertSanmaTag(helper, fixture.table.getUpdateTag(helper.getLevel().registryAccess()));
             helper.assertTrue(fixture.table.getUpdatePacket() != null,
                     "A running sanma table must produce its ordinary client update packet");
             fixture.tick();
@@ -145,7 +145,7 @@ public final class MahjongIntegrationTests {
             for (int i = 0; i < 3; i++) fixture.maid(i, true);
             fixture.start();
             helper.assertTrue(fixture.session().size() == 2, "Sanma must first recruit only two maids");
-            assertSanmaTag(helper, fixture.table.getUpdateTag());
+            assertSanmaTag(helper, fixture.table.getUpdateTag(helper.getLevel().registryAccess()));
             fixture.table.endGame();
             fixture.table.selectPreset(RuleSetPreset.MAHJONG_SOUL_4P);
             fixture.start();
@@ -155,12 +155,12 @@ public final class MahjongIntegrationTests {
                     "Selecting four-player mahjong must reopen the fourth seat and create four engine players");
             helper.assertTrue(fixture.session().size() == 3 && fixture.session().name(3) != null,
                     "The reopened fourth seat must allow the third maid to join");
-            CompoundTag saved = fixture.table.saveWithoutMetadata();
+            CompoundTag saved = fixture.table.saveWithoutMetadata(helper.getLevel().registryAccess());
             helper.assertTrue(saved.getList("Seats", Tag.TAG_COMPOUND).size() == 4
                             && saved.getList("Seats", Tag.TAG_COMPOUND).getCompound(3).getBoolean("enabled")
                             && saved.getList("HumanPlayers", Tag.TAG_COMPOUND).size() == 4,
                     "Four-player serialization must retain all four enabled seats and player input states");
-            fixture.table.load(saved);
+            fixture.table.loadWithComponents(saved, helper.getLevel().registryAccess());
             fixture.tick();
             helper.assertTrue(fixture.table.driver().match().playerCount() == 4 && fixture.session().size() == 3,
                     "The four-player match and all three maids must survive save/load after sanma");
@@ -173,12 +173,12 @@ public final class MahjongIntegrationTests {
         try (Fixture fixture = new Fixture(helper, 1, RuleSetPreset.MAHJONG_SOUL_SANMA_3P)) {
             fixture.start();
             helper.assertTrue(fixture.session().size() == 0, "This sanma regression requires no maid participants");
-            assertSanmaTag(helper, fixture.table.getUpdateTag());
+            assertSanmaTag(helper, fixture.table.getUpdateTag(helper.getLevel().registryAccess()));
             helper.assertTrue(fixture.table.getUpdatePacket() != null,
                     "Sanma updates must also succeed without maid participants");
-            CompoundTag saved = fixture.table.saveWithoutMetadata();
+            CompoundTag saved = fixture.table.saveWithoutMetadata(helper.getLevel().registryAccess());
             assertSanmaTag(helper, saved);
-            fixture.table.load(saved);
+            fixture.table.loadWithComponents(saved, helper.getLevel().registryAccess());
             fixture.tick();
             assertSanmaTable(helper, fixture);
             helper.assertTrue(fixture.table.seats().get(0).occupant().orElseThrow().equals(fixture.humans.get(0)),
@@ -199,9 +199,9 @@ public final class MahjongIntegrationTests {
             fixture.start();
             String firstName = fixture.session().name(1);
             String secondName = fixture.session().name(2);
-            CompoundTag saved = fixture.table.saveWithoutMetadata();
+            CompoundTag saved = fixture.table.saveWithoutMetadata(helper.getLevel().registryAccess());
             assertSanmaTag(helper, saved);
-            fixture.table.load(saved);
+            fixture.table.loadWithComponents(saved, helper.getLevel().registryAccess());
             fixture.tick();
             assertSanmaTable(helper, fixture);
             helper.assertTrue(fixture.session().size() == 2
@@ -211,7 +211,7 @@ public final class MahjongIntegrationTests {
             helper.assertTrue(firstName.equals(fixture.session().name(1))
                             && secondName.equals(fixture.session().name(2)),
                     "Sanma save/load must preserve each maid at the same seat");
-            assertSanmaTag(helper, fixture.table.getUpdateTag());
+            assertSanmaTag(helper, fixture.table.getUpdateTag(helper.getLevel().registryAccess()));
             helper.assertTrue(fixture.table.getUpdatePacket() != null,
                     "The restored sanma table must still produce client updates");
         }
@@ -276,7 +276,7 @@ public final class MahjongIntegrationTests {
             EntityMaid eligible = fixture.maid(0, true);
             EntityMaid wrongTask = fixture.maid(1, false);
             EntityMaid untamed = fixture.maid(2, true);
-            untamed.setTame(false);
+            untamed.setTame(false, true);
             EntityMaid far = fixture.maid(3, true);
             Vec3 farPosition = helper.absoluteVec(new Vec3(10.5, 1, 19.5));
             far.moveTo(farPosition.x, farPosition.y, farPosition.z, 0, 0);
@@ -360,8 +360,8 @@ public final class MahjongIntegrationTests {
             EntityMaid maid = fixture.maid(0, true);
             fixture.start();
             String name = fixture.session().name(1);
-            CompoundTag savedTable = fixture.table.saveWithoutMetadata();
-            fixture.table.load(savedTable);
+            CompoundTag savedTable = fixture.table.saveWithoutMetadata(helper.getLevel().registryAccess());
+            fixture.table.loadWithComponents(savedTable, helper.getLevel().registryAccess());
             helper.assertTrue(fixture.session().size() == 1 && fixture.session().contains(maid.getUUID()),
                     "Table NBT must preserve the participant UUID");
             helper.assertTrue(name.equals(fixture.session().name(1)),
@@ -380,11 +380,11 @@ public final class MahjongIntegrationTests {
         try (Fixture fixture = new Fixture(helper, 1)) {
             EntityMaid maid = fixture.maid(0, true);
             fixture.start();
-            CompoundTag savedTable = fixture.table.saveWithoutMetadata();
+            CompoundTag savedTable = fixture.table.saveWithoutMetadata(helper.getLevel().registryAccess());
             MahjongTableBlockEntity copy = new MahjongTableBlockEntity(
                     fixture.table.getBlockPos().offset(6, 0, 0), fixture.table.getBlockState());
             copy.setLevel(helper.getLevel());
-            copy.load(savedTable);
+            copy.loadWithComponents(savedTable, helper.getLevel().registryAccess());
             helper.assertTrue(((MaidTableAccess) copy).mahjongmaid$session().size() == 0,
                     "A table loaded at another position must reject the old participant identity");
             helper.assertTrue(fixture.session().contains(maid.getUUID()) && MaidTables.isPlaying(maid),
@@ -522,7 +522,7 @@ public final class MahjongIntegrationTests {
             for (int x = 0; x < 21; x++) {
                 for (int z = 0; z < 21; z++) helper.setBlock(x, 0, z, Blocks.STONE);
             }
-            var block = RiichiMahjongForgeMod.MAHJONG_TABLE.get();
+            var block = ModBlocks.MAHJONG_TABLE.get();
             var state = block.defaultBlockState();
             helper.setBlock(TABLE, state);
             block.setPlacedBy(helper.getLevel(), helper.absolutePos(TABLE), state, null, ItemStack.EMPTY);
@@ -541,14 +541,14 @@ public final class MahjongIntegrationTests {
         private EntityMaid maid(int index, boolean mahjongTask) {
             EntityMaid maid = InitEntities.MAID.get().create(helper.getLevel());
             helper.assertTrue(maid != null, "The registered maid entity must be creatable");
-            maid.setTame(true);
+            maid.setTame(true, true);
             maid.setOwnerUUID(humans.isEmpty() ? UUID.randomUUID() : humans.get(0));
             maid.setCustomName(Component.literal("Mahjong test maid " + index));
             var task = mahjongTask ? TaskManager.findTask(MahjongTask.UID).orElseThrow(
                     () -> new IllegalStateException("The TLM extension must register the mahjong task"))
                     : TaskManager.getIdleTask();
             if (mahjongTask) {
-                helper.assertTrue(task.getIcon().is(RiichiMahjongForgeMod.MAHJONG_TABLE_ITEM.get()),
+                helper.assertTrue(task.getIcon().is(ModBlocks.MAHJONG_TABLE_ITEM.get()),
                         "The registered mahjong task must display the Riichi Mahjong table item");
             }
             maid.setTask(task);

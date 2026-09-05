@@ -1,7 +1,7 @@
 package io.github.mahjongmaid.integration;
 
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
-import com.riichimahjongforge.mahjongtable.MahjongTableBlockEntity;
+import com.riichimahjong.mahjongtable.MahjongTableBlockEntity;
 import com.themahjong.driver.MatchPhase;
 import com.themahjong.driver.TheMahjongDriver;
 import net.minecraft.core.BlockPos;

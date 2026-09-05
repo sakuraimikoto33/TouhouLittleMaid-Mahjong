@@ -1,4 +1,4 @@
-# Touhou Little Maid: Mahjong — Forge 1.20.1
+# Touhou Little Maid: Mahjong — NeoForge 1.21.1
 
 Touhou Little Maid のメイドが Riichi Mahjong の Bot 席で対局するための連携 Mod です。バージョンは **1.0.0** です。
 
@@ -8,11 +8,11 @@ Touhou Little Maid のメイドが Riichi Mahjong の Bot 席で対局するた�
 
 | 項目 | 対象 |
 | --- | --- |
-| Minecraft | 1.20.1 |
-| Forge | 47.4.x 以上 |
-| Java | 17 |
-| [Touhou Little Maid](https://www.curseforge.com/minecraft/mc-mods/touhou-little-maid) | 1.5.3 以上（Forge / Minecraft 1.20.1） |
-| [Riichi Mahjong](https://www.curseforge.com/minecraft/mc-mods/riichi-mahjong) | 0.2.0 以上（Forge / Minecraft 1.20.1） |
+| Minecraft | 1.21.1 |
+| NeoForge | 21.1.219 以上 |
+| Java | 21 |
+| [Touhou Little Maid](https://www.curseforge.com/minecraft/mc-mods/touhou-little-maid) | 1.5.3 以上（NeoForge / Minecraft 1.21.1） |
+| [Riichi Mahjong](https://www.curseforge.com/minecraft/mc-mods/riichi-mahjong) | 0.4.1 以上（NeoForge / Minecraft 1.21.1） |
 
 ## 遊び方
 
@@ -47,4 +47,4 @@ Touhou Little Maid のメイドが Riichi Mahjong の Bot 席で対局するた�
 ./gradlew.bat build
 ```
 
-生成物：`build/libs/touhou_little_maid_mahjong-1.20.1-forge-1.0.0.jar`
+生成物：`build/libs/touhou_little_maid_mahjong-1.21.1-neoforge-1.0.0.jar`

@@ -1,8 +1,9 @@
 package io.github.mahjongmaid.mixin;
 
-import com.riichimahjongforge.mahjongtable.MahjongTableBlockEntity;
+import com.riichimahjong.mahjongtable.MahjongTableBlockEntity;
 import io.github.mahjongmaid.integration.MaidTableAccess;
 import io.github.mahjongmaid.integration.TableMaidSession;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -50,16 +51,16 @@ public abstract class MahjongTableBlockEntityMixin implements MaidTableAccess {
     }
 
     @Inject(method = "saveAdditional", at = @At("TAIL"), remap = true)
-    private void mahjongmaid$save(CompoundTag tag, CallbackInfo ci) {
+    private void mahjongmaid$save(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
         mahjongmaid$session().save(tag);
     }
 
-    @Inject(method = "load", at = @At("TAIL"), remap = true)
-    private void mahjongmaid$load(CompoundTag tag, CallbackInfo ci) {
+    @Inject(method = "loadAdditional", at = @At("TAIL"), remap = true)
+    private void mahjongmaid$load(CompoundTag tag, HolderLookup.Provider registries, CallbackInfo ci) {
         mahjongmaid$session().load(tag);
     }
 
-    // Riichi Mahjong 0.2.0 keeps four physical seats in sanma, but its driver has
+    // Riichi Mahjong 0.4.1 keeps four physical seats in sanma, but its driver has
     // only three players. Bound the human-player loops without trimming the
     // physical Seats NBT, which still needs to retain the disabled North seat.
     @Redirect(method = "serverTick()V", at = @At(value = "INVOKE",
@@ -68,7 +69,7 @@ public abstract class MahjongTableBlockEntityMixin implements MaidTableAccess {
         return mahjongmaid$activeSeatCount(list);
     }
 
-    @Redirect(method = "saveAdditional(Lnet/minecraft/nbt/CompoundTag;)V", remap = true,
+    @Redirect(method = "saveAdditional(Lnet/minecraft/nbt/CompoundTag;Lnet/minecraft/core/HolderLookup$Provider;)V", remap = true,
             at = @At(value = "INVOKE", target = "Ljava/util/List;size()I", remap = false), require = 0)
     private int mahjongmaid$savingSeatCount(List<?> list) {
         return mahjongmaid$activeSeatCount(list);
@@ -87,7 +88,7 @@ public abstract class MahjongTableBlockEntityMixin implements MaidTableAccess {
     private static String fallbackSeatName(int seat) { throw new AssertionError("Mixin shadow"); }
 
     @Redirect(method = "playFinalWinEffects", at = @At(value = "INVOKE",
-            target = "Lcom/riichimahjongforge/mahjongtable/MahjongTableBlockEntity;fallbackSeatName(I)Ljava/lang/String;"))
+            target = "Lcom/riichimahjong/mahjongtable/MahjongTableBlockEntity;fallbackSeatName(I)Ljava/lang/String;"))
     private String mahjongmaid$winnerName(int seat) {
         String name = mahjongmaid$name(seat);
         return name == null ? fallbackSeatName(seat) : name;
