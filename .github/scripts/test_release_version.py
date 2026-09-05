@@ -10,9 +10,7 @@ from release_version import (
     SemVer,
     decide_release,
     history_url,
-    read_build_dependencies,
     read_gradle_property,
-    render_release_notes,
     write_github_output,
 )
 
@@ -176,62 +174,22 @@ class InputOutputTest(unittest.TestCase):
                 write_github_output(path, {"tag": "first\nsecond"})
 
 
-class ReleaseNotesTest(unittest.TestCase):
-    def render(self, properties: str) -> str:
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "gradle.properties"
-            path.write_text(properties, encoding="utf-8")
-            return render_release_notes(
-                "https://github.com/owner/repo/compare/old...new",
-                read_build_dependencies(path),
-            )
-
-    def test_forge_notes_include_its_actual_build_dependencies(self) -> None:
-        notes = self.render(FORGE_PROPERTIES)
-        self.assertIn("Minecraft: 1.20.1", notes)
-        self.assertIn("[Forge](https://files.minecraftforge.net/): 47.4.0", notes)
-        self.assertIn("1.5.3-forge+mc1.20.1", notes)
-        self.assertIn("MinecraftRiichiMahjong): 0.2.0", notes)
-        self.assertNotIn("Architectury", notes)
-        self.assertNotIn("NeoForge", notes)
-        self.assertNotIn("YSM", notes)
-        self.assertIn("[Full Changelog](https://github.com/owner/repo/compare/old...new)", notes)
-
-    def test_neoforge_notes_include_architectury_and_build_riichi_version(self) -> None:
-        notes = self.render(NEOFORGE_PROPERTIES)
-        self.assertIn("Minecraft: 1.21.1", notes)
-        self.assertIn("[NeoForge](https://neoforged.net/): 21.1.219", notes)
-        self.assertIn("1.5.3-neoforge+mc1.21.1", notes)
-        self.assertIn("MinecraftRiichiMahjong): 0.4.1", notes)
-        self.assertIn("architectury-api): 13.0.8", notes)
-        self.assertIn("build versions, not minimum supported versions", notes)
-        self.assertNotIn("0.2.0", notes)
-        self.assertNotIn("YSM", notes)
-
-    def test_missing_architectury_is_rejected_on_neoforge(self) -> None:
-        with self.assertRaisesRegex(ValueError, "architectury_version"):
-            self.render(NEOFORGE_PROPERTIES.replace("architectury_version=13.0.8\n", ""))
-
-    def test_missing_or_ambiguous_loader_is_rejected(self) -> None:
-        for properties in (
-            FORGE_PROPERTIES.replace("forge_version=47.4.0\n", ""),
-            FORGE_PROPERTIES + "neo_version=21.1.219\n",
-        ):
-            with self.subTest(properties=properties):
-                with self.assertRaisesRegex(ValueError, "exactly one Forge or NeoForge"):
-                    self.render(properties)
-
-
 class CommandLineTest(unittest.TestCase):
     def test_real_git_repository_selects_releases_for_both_loaders(self) -> None:
         script = Path(__file__).with_name("release_version.py").resolve()
-        cases = (
-            (FORGE_PROPERTIES, "1.20.1", "0.9.0-mc1.20.1", True, False),
-            (NEOFORGE_PROPERTIES, "1.21.1", None, True, True),
-            (FORGE_PROPERTIES.replace("mod_version=1.0.0", "mod_version=0.9.0"),
-             "1.20.1", "0.9.0-mc1.20.1", False, False),
+        minimal_properties = "".join(
+            line for line in NEOFORGE_PROPERTIES.splitlines(keepends=True)
+            if line.partition("=")[0] in {"mod_version", "minecraft_version"}
         )
-        for properties, minecraft, previous, should_release, architectury in cases:
+        cases = (
+            (FORGE_PROPERTIES, "1.20.1", "0.9.0-mc1.20.1", True),
+            (NEOFORGE_PROPERTIES, "1.21.1", None, True),
+            (FORGE_PROPERTIES.replace("mod_version=1.0.0", "mod_version=0.9.0"),
+             "1.20.1", "0.9.0-mc1.20.1", False),
+            # Changelog generation must not require loader or dependency metadata.
+            (minimal_properties, "1.21.1", None, True),
+        )
+        for properties, minecraft, previous, should_release in cases:
             with self.subTest(minecraft=minecraft, should_release=should_release):
                 with tempfile.TemporaryDirectory() as directory:
                     root = Path(directory)
@@ -271,9 +229,11 @@ class CommandLineTest(unittest.TestCase):
                     self.assertEqual("false", outputs["prerelease"])
                     self.assertEqual(history_url("owner/repo", "abc123", previous), outputs["history_url"])
                     notes = (root / "release-notes.md").read_text(encoding="utf-8")
-                    self.assertIn(outputs["history_url"], notes)
-                    self.assertEqual(architectury, "Architectury API" in notes)
-                    self.assertNotIn("YSM", notes)
+                    expected_url = (
+                        f"https://github.com/owner/repo/compare/{previous}...abc123"
+                        if previous else "https://github.com/owner/repo/commits/abc123"
+                    )
+                    self.assertEqual(f"[Full Changelog]({expected_url})\n", notes)
 
 
 if __name__ == "__main__":

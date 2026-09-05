@@ -23,7 +23,6 @@ SEMVER_PATTERN = re.compile(
     r"(?:\+(?P<build>[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
 )
 MINECRAFT_VERSION_PATTERN = re.compile(r"^[0-9A-Za-z._-]+$")
-DEPENDENCY_VERSION_PATTERN = re.compile(r"^[0-9A-Za-z.+_-]+$")
 
 
 @total_ordering
@@ -198,81 +197,8 @@ def history_url(repository: str, target: str, previous_tag: str | None) -> str:
     )
 
 
-@dataclass(frozen=True)
-class BuildDependencies:
-    minecraft_version: str
-    loader_name: str
-    loader_version: str
-    touhou_little_maid_version: str
-    riichi_mahjong_version: str
-    architectury_version: str | None = None
-
-
-def read_build_dependencies(path: Path) -> BuildDependencies:
-    minecraft_version = read_gradle_property(path, "minecraft_version")
-    if not MINECRAFT_VERSION_PATTERN.fullmatch(minecraft_version):
-        raise ValueError(f"invalid minecraft_version: {minecraft_version}")
-
-    # Loader properties are owned by each Minecraft branch. Do not guess a
-    # loader from the Minecraft version or depend on a distribution site's IDs.
-    keys = {
-        line.split("=", 1)[0].strip()
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if "=" in line and not line.lstrip().startswith("#")
-    }
-    loader_keys = keys & {"forge_version", "neo_version"}
-    if len(loader_keys) != 1:
-        raise ValueError(f"{path} must define exactly one Forge or NeoForge version")
-    loader_key = loader_keys.pop()
-
-    def dependency_version(key: str) -> str:
-        version = read_gradle_property(path, key)
-        if not DEPENDENCY_VERSION_PATTERN.fullmatch(version):
-            raise ValueError(f"invalid {key}: {version}")
-        return version
-
-    neoforge = loader_key == "neo_version"
-    return BuildDependencies(
-        minecraft_version=minecraft_version,
-        loader_name="NeoForge" if neoforge else "Forge",
-        loader_version=dependency_version(loader_key),
-        touhou_little_maid_version=dependency_version("touhou_little_maid_version"),
-        riichi_mahjong_version=dependency_version("riichi_mahjong_version"),
-        architectury_version=(
-            dependency_version("architectury_version") if neoforge else None
-        ),
-    )
-
-
-def render_release_notes(
-    changelog_url: str, dependencies: BuildDependencies
-) -> str:
-    loader_url = (
-        "https://neoforged.net/"
-        if dependencies.loader_name == "NeoForge"
-        else "https://files.minecraftforge.net/"
-    )
-    lines = [
-        "## Build environment and required dependencies",
-        "",
-        "Built with the following versions. These are build versions, not "
-        "minimum supported versions. Install dependencies for the matching "
-        "Minecraft version and loader.",
-        "",
-        f"- Minecraft: {dependencies.minecraft_version}",
-        f"- [{dependencies.loader_name}]({loader_url}): {dependencies.loader_version}",
-        "- [Touhou Little Maid](https://github.com/TartaricAcid/TouhouLittleMaid): "
-        f"{dependencies.touhou_little_maid_version}",
-        "- [Riichi Mahjong](https://github.com/caxapexac/MinecraftRiichiMahjong): "
-        f"{dependencies.riichi_mahjong_version}",
-    ]
-    if dependencies.architectury_version is not None:
-        lines.append(
-            "- [Architectury API](https://github.com/architectury/architectury-api): "
-            f"{dependencies.architectury_version} (required by Riichi Mahjong)"
-        )
-    lines.extend(["", f"[Full Changelog]({changelog_url})", ""])
-    return "\n".join(lines)
+def render_release_notes(changelog_url: str) -> str:
+    return f"[Full Changelog]({changelog_url})\n"
 
 
 def git_tags() -> list[str]:
@@ -333,9 +259,7 @@ def main() -> int:
         }
 
         if args.release_notes is not None:
-            notes = render_release_notes(
-                output_values["history_url"], read_build_dependencies(args.properties)
-            )
+            notes = render_release_notes(output_values["history_url"])
             with args.release_notes.open("w", encoding="utf-8", newline="\n") as output:
                 output.write(notes)
 
