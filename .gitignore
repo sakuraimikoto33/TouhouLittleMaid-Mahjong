@@ -1,0 +1,15 @@
+/.gradle/
+/build/
+/run/
+/run-data/
+/run-gametest/
+/out/
+/bin/
+/.idea/
+/.vscode/
+/*.iml
+/.classpath
+/.project
+/.settings/
+/logs/
+*.hprof
